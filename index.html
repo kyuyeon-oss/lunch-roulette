@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍽 오늘 점심 뭐 먹지?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F3EF;--card:#fff;
+  --text:#2D2A26;--text2:#8A8078;--text3:#B8AEA4;
+  --mint:#5BA7A0;--mint-light:#E8F4F2;--mint-dark:#4A918A;
+  --coral:#E8836A;--coral-light:#FFF0EC;
+  --border:#EDE6DE;--border2:#DDD5CC;
+  --r:14px;--r2:20px;
+}
+body{
+  font-family:'Noto Sans KR',system-ui,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100dvh;
+  display:flex;justify-content:center;
+  -webkit-font-smoothing:antialiased;
+}
+.app{width:100%;max-width:440px;padding:20px 16px 100px}
+button{font-family:inherit;cursor:pointer}
+
+/* Header */
+.hdr{text-align:center;padding:24px 0 20px}
+.hdr h1{font-size:22px;font-weight:800;margin-bottom:4px}
+.hdr p{font-size:13px;color:var(--text2)}
+
+/* Tabs */
+.tabs{
+  display:flex;gap:8px;margin-bottom:20px;
+}
+.tab{
+  flex:1;padding:10px 0;
+  border-radius:12px;border:1.5px solid var(--border2);
+  background:var(--card);
+  font-size:13px;font-weight:600;
+  color:var(--text2);
+  transition:all .2s;
+}
+.tab.on{
+  background:var(--mint);color:#fff;
+  border-color:var(--mint);
+  box-shadow:0 2px 12px rgba(91,167,160,.25);
+}
+.tab:not(.on):hover{border-color:var(--mint);color:var(--mint)}
+
+/* Categories */
+.cats-bar{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:10px;
+}
+.cats-bar .label{font-size:13px;font-weight:600;color:var(--text2);white-space:nowrap}
+.cats-bar .cnt{font-size:12px;color:var(--text3);white-space:nowrap}
+.cats-bar .sel-all{
+  margin-left:auto;
+  background:var(--mint);color:#fff;
+  border:none;padding:5px 12px;border-radius:8px;
+  font-size:12px;font-weight:600;
+  white-space:nowrap;transition:background .15s;
+}
+.cats-bar .sel-all:hover{background:var(--mint-dark)}
+.pills{
+  display:flex;gap:6px;flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.pill{
+  padding:6px 12px;border-radius:20px;
+  border:1.5px solid var(--border2);background:var(--card);
+  font-size:12px;font-weight:600;color:var(--text2);
+  transition:all .15s;white-space:nowrap;
+}
+.pill.on{border-color:var(--mint);color:var(--mint);background:var(--mint-light)}
+.pill:hover{border-color:var(--mint)}
+
+/* Draw area */
+.draw-area{
+  display:flex;flex-direction:column;align-items:center;
+  padding:24px 0;
+}
+.draw-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--mint),var(--mint-dark));
+  color:#fff;border:none;border-radius:var(--r);
+  font-size:17px;font-weight:700;
+  box-shadow:0 4px 16px rgba(91,167,160,.3);
+  transition:all .2s;
+  letter-spacing:.5px;
+}
+.draw-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(91,167,160,.4)}
+.draw-btn:active{transform:scale(.98)}
+
+/* Result card */
+.res-card{
+  display:none;
+  width:100%;
+  background:var(--card);border-radius:var(--r2);
+  box-shadow:0 4px 24px rgba(0,0,0,.06);
+  overflow:hidden;
+  animation:cardIn .5s cubic-bezier(.34,1.56,.64,1);
+  margin-bottom:16px;
+}
+@keyframes cardIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
+.res-card.show{display:block}
+.res-emoji{
+  display:flex;align-items:center;justify-content:center;
+  height:140px;
+  background:linear-gradient(135deg,var(--mint-light),#F0F8F6);
+  font-size:56px;
+  position:relative;overflow:hidden;
+}
+.res-emoji::after{
+  content:'';position:absolute;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(91,167,160,.08);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.res-body{padding:20px 24px 24px;text-align:center}
+.res-name{font-size:20px;font-weight:800;margin-bottom:4px}
+.res-cat{font-size:13px;color:var(--text2);margin-bottom:16px}
+.res-tags{
+  display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.res-tag{
+  padding:6px 14px;border-radius:10px;
+  border:1.5px solid var(--border);
+  font-size:12px;font-weight:600;color:var(--text2);
+  background:var(--card);
+  text-decoration:none;transition:all .15s;
+}
+.res-tag:hover{border-color:var(--mint);color:var(--mint)}
+.res-order{
+  display:inline-block;
+  padding:10px 24px;border-radius:12px;
+  background:var(--mint);color:#fff;
+  font-size:14px;font-weight:700;
+  border:none;text-decoration:none;
+  transition:all .15s;
+}
+.res-order:hover{background:var(--mint-dark)}
+
+/* Retry */
+.retry-btn{
+  width:100%;padding:14px;
+  background:var(--text);color:#fff;
+  border:none;border-radius:var(--r);
+  font-size:15px;font-weight:700;
+  transition:all .15s;
+  margin-bottom:20px;
+}
+.retry-btn:hover{background:#1a1815;transform:translateY(-1px)}
+.retry-btn:active{transform:scale(.98)}
+
+/* History */
+.hist{
+  background:var(--card);border-radius:var(--r);
+  border:1.5px solid var(--border);
+  padding:14px 16px;
+}
+.hist-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.hist-head b{font-size:13px;font-weight:600;color:var(--text2)}
+.hist-head .clear{
+  background:none;border:none;font-size:12px;
+  color:var(--text3);font-weight:500;
+  transition:color .15s;
+}
+.hist-head .clear:hover{color:var(--coral)}
+.hist-list{display:flex;flex-direction:column;gap:4px}
+.hist-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:10px;
+  font-size:13px;font-weight:500;
+  transition:background .12s;
+}
+.hist-item:hover{background:#FAF6F2}
+.hist-item .h-emoji{font-size:16px;flex-shrink:0}
+.hist-item .h-name{flex:1}
+.hist-item .h-time{font-size:11px;color:var(--text3)}
+.hist-empty{
+  font-size:13px;color:var(--text3);text-align:center;padding:8px;
+}
+
+/* Manage menu */
+.manage{margin-top:16px}
+.manage-toggle{
+  width:100%;padding:10px;
+  background:none;border:1.5px dashed var(--border2);
+  border-radius:var(--r);
+  font-size:13px;font-weight:600;color:var(--text3);
+  transition:all .15s;
+}
+.manage-toggle:hover{border-color:var(--mint);color:var(--mint)}
+.manage-panel{
+  display:none;margin-top:10px;
+  background:var(--card);border-radius:var(--r);
+  border:1.5px solid var(--border);
+  padding:14px 16px;
+  animation:cardIn .3s ease;
+}
+.manage-panel.show{display:block}
+.manage-panel .add-row{display:flex;gap:6px;margin-bottom:10px}
+.manage-panel .add-in{
+  flex:1;padding:10px 14px;
+  background:#FAF6F2;border:1.5px solid transparent;
+  border-radius:10px;font-size:13px;font-weight:500;
+  color:var(--text);outline:none;font-family:inherit;
+  transition:all .15s;
+}
+.manage-panel .add-in:focus{background:#fff;border-color:var(--mint)}
+.manage-panel .add-in::placeholder{color:#ccc}
+.manage-panel .add-bt{
+  padding:10px 16px;background:var(--mint);color:#fff;
+  border:none;border-radius:10px;font-size:13px;font-weight:700;
+  font-family:inherit;white-space:nowrap;
+}
+.manage-panel .mlist{
+  max-height:200px;overflow-y:auto;
+  display:flex;flex-wrap:wrap;gap:4px;
+}
+.manage-panel .mitem{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:5px 10px;border-radius:8px;
+  background:#FAF6F2;font-size:12px;font-weight:500;
+}
+.manage-panel .mitem .mx{
+  background:none;border:none;color:var(--text3);
+  font-size:11px;cursor:pointer;padding:0 2px;
+  transition:color .15s;
+}
+.manage-panel .mitem .mx:hover{color:var(--coral)}
+.share{
+  width:100%;padding:10px;margin-top:10px;
+  background:transparent;color:var(--text2);
+  border:1.5px dashed var(--border2);border-radius:var(--r);
+  font-size:13px;font-weight:600;
+  transition:all .15s;
+}
+.share:hover{border-color:var(--mint);color:var(--mint)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--text);color:#fff;
+  padding:12px 24px;border-radius:14px;
+  font-size:13px;font-weight:600;
+  opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  z-index:100;white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.15);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Animation */
+.drawing .draw-btn{
+  animation:pulse 1s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+@media(max-width:380px){
+  .app{padding:16px 12px 80px}
+  .res-emoji{height:120px;font-size:44px}
+  .res-name{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <h1>🍽 오늘 점심 뭐 먹지?</h1>
+    <p>📍 영동대로 96길 20 · 삼성동</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tabNearby" onclick="switchTab('nearby')">🏃 코앞 식당</button>
+    <button class="tab" id="tabMatjip" onclick="switchTab('matjip')">🚶 맛집 가기</button>
+    <button class="tab" id="tabDeliv" onclick="switchTab('deliv')">🛵 배달</button>
+  </div>
+
+  <div class="cats-bar">
+    <span class="label">▾ 카테고리</span>
+    <span class="cnt" id="totalCnt">총 0개</span>
+    <button class="sel-all" id="selAllBtn" onclick="toggleAll()">전체 선택</button>
+  </div>
+  <div class="pills" id="pills"></div>
+
+  <div class="draw-area" id="drawArea">
+    <button class="draw-btn" id="drawBtn" onclick="draw()">🎰 돌려돌려~</button>
+  </div>
+
+  <div class="res-card" id="resCard">
+    <div class="res-emoji" id="resEmoji">🍽</div>
+    <div class="res-body">
+      <div class="res-name" id="resName"></div>
+      <div class="res-cat" id="resCat"></div>
+      <div class="res-tags" id="resTags"></div>
+    </div>
+  </div>
+
+  <button class="retry-btn" id="retryBtn" style="display:none" onclick="draw()">↻ 다시 돌리기</button>
+
+  <div class="hist" id="histSec" style="display:none">
+    <div class="hist-head">
+      <b>🕐 최근 추천 (<span id="histCnt">0</span>)</b>
+      <button class="clear" onclick="clearHist()">삭제</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
+  </div>
+
+  <div class="manage">
+    <button class="manage-toggle" onclick="toggleManage()">⚙️ 메뉴 관리</button>
+    <div class="manage-panel" id="managePanel">
+      <div class="add-row">
+        <input class="add-in" id="inp" placeholder="식당 이름" onkeydown="if(event.key==='Enter')addItem()" style="flex:2">
+        <input class="add-in" id="inpDesc" placeholder="메뉴 (선택)" style="flex:2">
+        <button class="add-bt" onclick="addItem()">추가</button>
+      </div>
+      <div class="add-row" style="gap:4px;flex-wrap:wrap;margin-bottom:10px">
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍚</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍔</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍣</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍜</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍛</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🥗</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍝</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🌮</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍲</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🥩</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍕</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍗</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🌶️</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🐟</span>
+        <span class="emoji-pick" style="font-size:18px;cursor:pointer;padding:2px 6px;border-radius:8px;transition:all .12s" onclick="pickEmoji(this)">🍽</span>
+      </div>
+      <div class="mlist" id="mlist"></div>
+      <button class="share" onclick="shareURL()">🔗 팀원에게 공유하기</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOJIS={
+  "버거":"🍔","치킨":"🍗","피자":"🍕","중식":"🥟","일식":"🍣","한식":"🍚",
+  "멕시칸":"🌮","인도":"🍛","터키":"🥙","샐러드":"🥗","덮밥":"🍱","카레":"🍛",
+  "분식":"🍢","마라":"🌶️","중식/마라":"🌶️","샤브":"🫕","스테이크":"🥩","파스타":"🍝","양식":"🍝","아시안":"🍜","피자":"🍕",
+  "다이어트":"🥗","냉면":"🍜","해장":"🍲","국수":"🍜","도시락":"🍱",
+  "김밥":"🍙","초밥":"🍣","돈카츠":"🍱","라멘":"🍜","오모라이스":"🍳",
+  "타코":"🌮","포케":"🥗","육회":"🥩","쌀국수":"🍜"
+};
+const CATS={
+  "버거":["쉐이크쉑","GTS BURGER","고든램지 스트리트 버거","프랭크버거","맥도날드","옐로트렁크","바스버거"],
+  "멕시칸":["도스타코스","쿠차라","베어스타코","부리또리"],
+  "한식":["화평식당","갱상도 야채고기찌개","광수육회","앰샘김밥","시골빈대떡파전","강릉엄지네꼬막집","솔숍"],
+  "일식":["후토루","후라토식당","김태완 스시","상무초밥","김남완초밥","쇼지","고에몬","치보"],
+  "덮밥":["오늘도 오모라이스","버텍스 미국식 덮밥","양산도 민물장어덮밥","록스플레이트","구름계란덮밥"],
+  "카레":["카레마치","스아게","지미카레","카레세끼"],
+  "중식/마라":["중경마라탕","샹츠마라"],
+  "치킨":["KFC"],
+  "분식":["싸움의고수","분식을 품다"],
+  "피자":["잭슨피자"],
+  "다이어트":["프로티너","프레퍼스 다이어트 푸드","맛단 다이어트식단","슬림비빔밥","슬로우캘리","데일리픽스","노길트클럽","헬키푸키"],
+  "샤브":["샤브익스프레스"],
+  "양식":["기브 앤 스테이크","고급양식","유럽식당"],
+  "아시안":["베트남쌀국수 몬스터포","미분당"],
+  "기타":["모모유부"]
+};
+const OUT_NEARBY={
+  "한식":["아리랑","소소헌","성풍한우","온니담"],
+  "일식":["돈오반","미카제"],
+  "중식":["천미향"],
+  "해물":["바다풍경"],
+  "카레":["커리인"],
+  "베트남":["더하노이"],
+  "건강식":["포카코"],
+  "탕/국":["대복삼계탕","은하수면옥","일억조뼈해장국"]
+};
+const OUT_MATJIP={
+  "한식":["우도옥","삼성국수","곰바위","인기명","고반식당","남도밥상 이어요","삼군김치찌개","아야진생태찌개","노란주전자","보리수","고운님","경천애인2237","칠프로칠백식당","무월식탁","교대밀밭"],
+  "냉면":["봉밀가","능라도","김인복의 광평"],
+  "일식":["스시츠카무","기꾸스시","모도우","부타이","모구모구 돈부리","지유가오카","코나야","카토멘","탄탄면공방"],
+  "양식":["마세리아","에그슬럿","미태리","로다","플랑플랑"],
+  "중식":["딤딤섬","시추안하우스"],
+  "아시안":["아그라","케르반","허머스키친","파파야리프","오성식당","루나아시아"],
+  "해물":["동어동락","네모오징어"],
+  "고기":["뽕나무쟁이","농민백암순대","박서방순대국밥","부산아지매국밥"],
+  "샤브":["샤블랑157"],
+  "건강식":["후레쉬빌"]
+};
+
+const INFO={
+  // 코앞
+  "아리랑":{e:"🍚",d:"한식 백반·불고기"},
+  "돈오반":{e:"🍱",d:"돈카츠·일식 덮밥"},
+  "소소헌":{e:"🍜",d:"칼국수·수제비"},
+  "바다풍경":{e:"🐟",d:"생선구이·해물탕"},
+  "성풍한우":{e:"🥩",d:"한우 구이·곰탕"},
+  "포카코":{e:"🥙",d:"포케·샐러드 볼"},
+  "대복삼계탕":{e:"🐔",d:"삼계탕·백숙"},
+  "미카제":{e:"🍣",d:"초밥·회"},
+  "은하수면옥":{e:"🍜",d:"냉면·갈비탕"},
+  "천미향":{e:"🥟",d:"중식·짬뽕·탕수육"},
+  "커리인":{e:"🍛",d:"일본식 카레"},
+  "더하노이":{e:"🍜",d:"베트남 쌀국수·분짜"},
+  "온니담":{e:"🍙",d:"건강 도시락·정식"},
+  "일억조뼈해장국":{e:"🍲",d:"뼈해장국·우거지탕"},
+  // 맛집
+  "우도옥":{e:"🥩",d:"한우곰탕·평양냉면"},
+  "봉밀가":{e:"🍜",d:"평양냉면·만두"},
+  "삼성국수":{e:"🍜",d:"콩국수·비빔국수"},
+  "능라도":{e:"🍜",d:"평양냉면·녹두전"},
+  "아그라":{e:"🍛",d:"정통 인도 커리·탄두리"},
+  "케르반":{e:"🥙",d:"터키 케밥·피데"},
+  "스시츠카무":{e:"🍣",d:"회전초밥·회덮밥"},
+  "동어동락":{e:"🐟",d:"고등어회·해산물"},
+  "마세리아":{e:"🍝",d:"파스타·리조또"},
+  "부타이":{e:"🍜",d:"마제소바·돈카츠"},
+  "허머스키친":{e:"🥙",d:"중동식 허머스·팔라펠"},
+  "에그슬럿":{e:"🥚",d:"에그 샌드위치·브런치"},
+  "기꾸스시":{e:"🍣",d:"스시·사시미"},
+  "김인복의 광평":{e:"🍜",d:"평양냉면·도베고기"},
+  "딤딤섬":{e:"🥟",d:"홍콩식 딤섬·하가우"},
+  "탄탄면공방":{e:"🍜",d:"탄탄멘·라멘"},
+  "무월식탁":{e:"🍚",d:"한정식·간장새우"},
+  "모도우":{e:"🍣",d:"스시·오마카세"},
+  "곰바위":{e:"🥩",d:"미쉐린 한우곰탕·대창"},
+  "시추안하우스":{e:"🌶️",d:"사천요리·마파두부"},
+  "파파야리프":{e:"🍛",d:"태국 팟타이·똠양꿍"},
+  "코나야":{e:"🍜",d:"우동·소바"},
+  "카토멘":{e:"🍜",d:"돈코츠 라멘"},
+  "교대밀밭":{e:"🍜",d:"칼국수·수제비"},
+  "삼군김치찌개":{e:"🍲",d:"김치찌개·제육"},
+  "아야진생태찌개":{e:"🐟",d:"생태찌개·동태찌개"},
+  "인기명":{e:"🍲",d:"한우곱탕·얼큰곱탕"},
+  "고반식당":{e:"🍚",d:"한식 정식·불고기"},
+  "모구모구 돈부리":{e:"🍱",d:"사케동·해산물덮밥"},
+  "남도밥상 이어요":{e:"🍚",d:"요일별 백반 정식"},
+  "미태리":{e:"🍝",d:"가성비 파스타"},
+  "농민백암순대":{e:"🍲",d:"순댓국·머리고기"},
+  "뽕나무쟁이":{e:"🐷",d:"족발·보쌈"},
+  "오성식당":{e:"🍛",d:"인도식 커리·난"},
+  "루나아시아":{e:"🍛",d:"인도 런치세트·커리"},
+  "노란주전자":{e:"🍶",d:"한식·막걸리안주"},
+  "로다":{e:"🍝",d:"양식·파스타"},
+  "지유가오카":{e:"🍱",d:"일식 정식·덮밥"},
+  "플랑플랑":{e:"🥐",d:"브런치·베이커리"},
+  "박서방순대국밥":{e:"🍲",d:"순대국밥"},
+  "보리수":{e:"🍚",d:"한식 정식"},
+  "고운님":{e:"🍚",d:"한정식·코스"},
+  "샤블랑157":{e:"🫕",d:"샤브샤브 무한리필"},
+  "경천애인2237":{e:"🍚",d:"한식 코스·정식"},
+  "후레쉬빌":{e:"🥗",d:"샐러드·건강식"},
+  "네모오징어":{e:"🦑",d:"오징어볶음·해물"},
+  "부산아지매국밥":{e:"🍲",d:"돼지국밥·수육"},
+  "칠프로칠백식당":{e:"🥩",d:"고기 정식"},
+  // 배달
+  "쉐이크쉑":{e:"🍔",d:"쉑버거·감자튀김"},
+  "GTS BURGER":{e:"🍔",d:"수제버거"},
+  "고든램지 스트리트 버거":{e:"🍔",d:"스트리트 버거"},
+  "프랭크버거":{e:"🍔",d:"스매쉬 버거"},
+  "맥도날드":{e:"🍔",d:"빅맥·맥너겟"},
+  "도스타코스":{e:"🌮",d:"타코·부리또"},
+  "쿠차라":{e:"🌮",d:"부리또·퀘사디아"},
+  "베어스타코":{e:"🌮",d:"타코·나초"},
+  "부리또리":{e:"🌯",d:"부리또·볼"},
+  "화평식당":{e:"🍚",d:"비빔밥·삼겹살"},
+  "갱상도 야채고기찌개":{e:"🍲",d:"야채고기찜"},
+  "광수육회":{e:"🥩",d:"육회비빔밥·육사시미"},
+  "앰샘김밥":{e:"🍙",d:"김밥·라면"},
+  "시골빈대떡파전":{e:"🥞",d:"빈대떡·해물파전"},
+  "후토루":{e:"🍣",d:"연어초밥·후토마키"},
+  "후라토식당":{e:"🍱",d:"규카츠·오므라이스"},
+  "김태완 스시":{e:"🍣",d:"오마카세 초밥"},
+  "상무초밥":{e:"🍣",d:"모듬초밥·회"},
+  "김남완초밥":{e:"🍣",d:"초밥 세트"},
+  "쇼지":{e:"🍣",d:"일식 오마카세"},
+  "고에몬":{e:"🍜",d:"일식·라멘"},
+  "오늘도 오모라이스":{e:"🍳",d:"오므라이스"},
+  "버텍스 미국식 덮밥":{e:"🍱",d:"데리야끼 치킨 덮밥"},
+  "양산도 민물장어덮밥":{e:"🐍",d:"장어덮밥·히츠마부시"},
+  "록스플레이트":{e:"🍱",d:"덮밥·돈부리"},
+  "구름계란덮밥":{e:"🥚",d:"계란덮밥·함박"},
+  "카레마치":{e:"🍛",d:"일본식 카레"},
+  "스아게":{e:"🍛",d:"삿포로 스프카레"},
+  "지미카레":{e:"🍛",d:"매운 카레"},
+  "카레세끼":{e:"🌶️",d:"매운숙성카레"},
+  "중경마라탕":{e:"🌶️",d:"마라탕·마라샹궈"},
+  "KFC":{e:"🍗",d:"후라이드치킨"},
+  "싸움의고수":{e:"🍢",d:"떡볶이·튀김"},
+  "치보":{e:"🥞",d:"오코노미야끼"},
+  "프로티너":{e:"🥗",d:"고단백 샐러드·랩"},
+  "프레퍼스 다이어트 푸드":{e:"🥗",d:"수비드 샐러드·볼"},
+  "맛단 다이어트식단":{e:"🥗",d:"다이어트 도시락"},
+  "슬림비빔밥":{e:"🥗",d:"저칼로리 비빔밥"},
+  "슬로우캘리":{e:"🥗",d:"샐러드·포케"},
+  "데일리픽스":{e:"🍔",d:"수제버거"},
+  "샤브익스프레스":{e:"🫕",d:"샤브샤브"},
+  "기브 앤 스테이크":{e:"🥩",d:"스테이크"},
+  "고급양식":{e:"🍝",d:"파스타·양식"},
+  "유럽식당":{e:"🍽",d:"양식 정식"},
+  "베트남쌀국수 몬스터포":{e:"🍜",d:"쌀국수·분짜"},
+  "미분당":{e:"🍜",d:"차돌 쌀국수"},
+  "잭슨피자":{e:"🍕",d:"피자"},
+  "솔숍":{e:"🍚",d:"솥밥 정식"},
+  "강릉엄지네꼬막집":{e:"🐚",d:"꼬막비빔밥"},
+  "모모유부":{e:"🍱",d:"유부초밥"},
+  "옐로트렁크":{e:"🍔",d:"새우버거·수제버거"},
+  "샹츠마라":{e:"🌶️",d:"마라탕·마라샹궈"},
+  "바스버거":{e:"🍔",d:"수제버거"},
+  "노길트클럽":{e:"🥣",d:"아사이볼·무설탕 디저트"},
+  "헬키푸키":{e:"🍙",d:"키토김밥·건강식"},
+  "분식을 품다":{e:"🍢",d:"떡볶이·순대·튀김"}
+};
+
+let tab='nearby',selCats=new Set(),filteredItems=[],pickHistory=[],selectedEmoji=null;
+function pickEmoji(el){
+  document.querySelectorAll('.emoji-pick').forEach(e=>e.style.background='');
+  el.style.background='var(--mint-light)';
+  selectedEmoji=el.textContent;
+}
+
+function catSource(){
+  if(tab==='nearby')return OUT_NEARBY;
+  if(tab==='matjip')return OUT_MATJIP;
+  return CATS;
+}
+
+function getEmoji(name){
+  if(INFO[name])return INFO[name].e;
+  for(const[k,v]of Object.entries(EMOJIS)){
+    if(name.includes(k))return v;
+  }
+  return'🍽';
+}
+function getDesc(name){
+  if(INFO[name])return INFO[name].d;
+  return getCat(name);
+}
+function getCat(name){
+  const src=catSource();
+  for(const[cat,list]of Object.entries(src)){
+    if(list.includes(name))return cat;
+  }
+  return'기타';
+}
+
+function switchTab(t){
+  tab=t;
+  document.getElementById('tabNearby').classList.toggle('on',t==='nearby');
+  document.getElementById('tabMatjip').classList.toggle('on',t==='matjip');
+  document.getElementById('tabDeliv').classList.toggle('on',t==='deliv');
+  selCats.clear();
+  hideResult();
+  buildPills();
+  selectAll();
+}
+
+function buildPills(){
+  const el=document.getElementById('pills');
+  el.innerHTML='';
+  const src=catSource();
+  Object.keys(src).forEach(k=>{
+    const p=mk('button','pill'+(selCats.has(k)?' on':''));
+    const emoji=EMOJIS[k]||'📦';
+    p.textContent=emoji+' '+k+'('+src[k].length+')';
+    p.onclick=()=>toggleCat(k);
+    el.appendChild(p);
+  });
+  updateFiltered();
+}
+
+function toggleCat(c){
+  if(selCats.has(c))selCats.delete(c);else selCats.add(c);
+  const src=catSource();
+  allSelected=selCats.size===Object.keys(src).length;
+  document.getElementById('selAllBtn').textContent=allSelected?'전체 해제':'전체 선택';
+  buildPills();
+}
+
+let allSelected=true;
+function selectAll(){
+  selCats.clear();
+  const src=catSource();
+  Object.keys(src).forEach(k=>selCats.add(k));
+  allSelected=true;
+  document.getElementById('selAllBtn').textContent='전체 해제';
+  buildPills();
+}
+function deselectAll(){
+  selCats.clear();
+  allSelected=false;
+  document.getElementById('selAllBtn').textContent='전체 선택';
+  buildPills();
+}
+function toggleAll(){
+  if(allSelected)deselectAll();else selectAll();
+}
+
+function updateFiltered(){
+  filteredItems=[];
+  const src=catSource();
+  selCats.forEach(k=>{if(src[k])filteredItems.push(...src[k])});
+  document.getElementById('totalCnt').textContent='총 '+filteredItems.length+'개';
+  renderManage();
+}
+
+function draw(){
+  if(!filteredItems.length){toast('선택된 메뉴가 없어요!');return}
+
+  const area=document.getElementById('drawArea');
+  area.classList.add('drawing');
+  hideResult();
+
+  const shuffleTime=1200;
+  const interval=80;
+  let elapsed=0;
+  const card=document.getElementById('resCard');
+  card.classList.add('show');
+  card.style.animation='none';
+
+  const tick=setInterval(()=>{
+    elapsed+=interval;
+    const ri=Math.floor(Math.random()*filteredItems.length);
+    const n=filteredItems[ri];
+    document.getElementById('resEmoji').textContent=getEmoji(n);
+    document.getElementById('resName').textContent=n;
+    document.getElementById('resCat').textContent=getDesc(n);
+    if(elapsed>=shuffleTime){
+      clearInterval(tick);
+      area.classList.remove('drawing');
+      // final pick
+      const fi=Math.floor(Math.random()*filteredItems.length);
+      const winner=filteredItems[fi];
+      showResult(winner);
+    }
+  },interval);
+}
+
+function showResult(name){
+  const card=document.getElementById('resCard');
+  card.classList.add('show');
+  card.style.animation='none';
+  void card.offsetWidth;
+  card.style.animation='cardIn .5s cubic-bezier(.34,1.56,.64,1)';
+
+  document.getElementById('resEmoji').textContent=getEmoji(name);
+  document.getElementById('resName').textContent=name;
+  document.getElementById('resCat').textContent=getDesc(name);
+
+  // tags
+  const tags=document.getElementById('resTags');
+  tags.innerHTML='';
+  if(tab==='deliv'){
+    tags.innerHTML='<span class="res-tag">🛵 배달 주문</span>';
+  }else if(tab==='nearby'){
+    tags.innerHTML='<span class="res-tag">🏃 도보 3분 이내</span>';
+  }else{
+    tags.innerHTML='<span class="res-tag">🚶 맛집 탐방</span>';
+  }
+
+  document.getElementById('retryBtn').style.display='block';
+  document.getElementById('drawBtn').style.display='none';
+
+  // history
+  pickHistory.unshift({name,emoji:getEmoji(name),time:new Date().toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'})});
+  if(pickHistory.length>5)pickHistory.pop();
+  renderHist();
+}
+
+function hideResult(){
+  document.getElementById('resCard').classList.remove('show');
+  document.getElementById('retryBtn').style.display='none';
+  document.getElementById('drawBtn').style.display='block';
+}
+
+function renderHist(){
+  const sec=document.getElementById('histSec');
+  if(!pickHistory.length){sec.style.display='none';return}
+  sec.style.display='block';
+  document.getElementById('histCnt').textContent=pickHistory.length;
+  const el=document.getElementById('histList');
+  el.innerHTML='';
+  pickHistory.forEach(h=>{
+    const d=mk('div','hist-item');
+    d.innerHTML=`<span class="h-emoji">${h.emoji}</span><span class="h-name">${h.name}</span><span class="h-time">${h.time}</span>`;
+    el.appendChild(d);
+  });
+}
+function clearHist(){pickHistory=[];renderHist()}
+
+function toggleManage(){
+  document.getElementById('managePanel').classList.toggle('show');
+}
+function renderManage(){
+  const el=document.getElementById('mlist');
+  el.innerHTML='';
+  filteredItems.forEach((t,i)=>{
+    const d=mk('span','mitem');
+    d.innerHTML=`${t}<button class="mx" onclick="rmItem(${i})">✕</button>`;
+    el.appendChild(d);
+  });
+}
+function addItem(){
+  const inp=document.getElementById('inp');
+  const v=inp.value.trim();
+  if(!v){return}
+  if(filteredItems.includes(v)){toast('이미 있는 메뉴예요!');return}
+  const desc=document.getElementById('inpDesc').value.trim();
+  const emoji=selectedEmoji||'🍽';
+  INFO[v]={e:emoji,d:desc||'기타'};
+  const src=catSource();
+  if(!src['기타'])src['기타']=[];
+  src['기타'].push(v);
+  selCats.add('기타');
+  inp.value='';
+  document.getElementById('inpDesc').value='';
+  selectedEmoji=null;
+  document.querySelectorAll('.emoji-pick').forEach(el=>el.style.background='');
+  buildPills();
+  toast('✅ 추가되었어요!');
+}
+function rmItem(i){
+  const name=filteredItems[i];
+  const src=catSource();
+  Object.values(src).forEach(list=>{
+    const idx=list.indexOf(name);
+    if(idx>-1)list.splice(idx,1);
+  });
+  buildPills();
+}
+
+function shareURL(){
+  const data={tab,items:filteredItems};
+  const enc=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  window.history.replaceState(null,'','#'+enc);
+  navigator.clipboard.writeText(location.href)
+    .then(()=>toast('📋 URL 복사 완료!'))
+    .catch(()=>toast('복사 실패 😢'));
+}
+
+function mk(tag,cls){const e=document.createElement(tag);e.className=cls;return e}
+function toast(m){
+  const t=document.getElementById('toast');
+  t.textContent=m;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// init
+switchTab('nearby');
+</script>
+</body>
+</html>
