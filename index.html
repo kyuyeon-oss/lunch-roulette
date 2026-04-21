@@ -284,7 +284,7 @@ button{font-family:inherit;cursor:pointer}
   60%{transform:translateX(-4px)}
   80%{transform:translateX(4px)}
 }
-.shaking{animation:shake .4s ease}
+.shaking .res-emoji{animation:shake .4s ease}
 
 /* Glow pulse on draw */
 @keyframes glowPulse{
@@ -314,12 +314,16 @@ button{font-family:inherit;cursor:pointer}
   100%{opacity:0;transform:scale(0) translate(var(--tx),var(--ty))}
 }
 
-/* Shuffle card wobble */
-.shuffling .res-emoji{animation:wobble .15s ease infinite alternate}
-@keyframes wobble{
-  0%{transform:rotate(-8deg) scale(1.05)}
-  100%{transform:rotate(8deg) scale(0.95)}
+/* Shuffle emoji-only wobble */
+.shuffling .res-emoji>span,.shuffling .res-emoji{
+  display:inline-block;
+  animation:wobble .15s ease infinite alternate;
 }
+@keyframes wobble{
+  0%{transform:rotate(-12deg) scale(1.1)}
+  100%{transform:rotate(12deg) scale(0.9)}
+}
+.shuffling .res-body,.shuffling .res-card{animation:none!important}
 
 /* Result name pop */
 .res-name.pop{animation:namePop .5s cubic-bezier(.34,1.56,.64,1)}
