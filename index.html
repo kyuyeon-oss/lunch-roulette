@@ -293,17 +293,59 @@ button{font-family:inherit;cursor:pointer}
 }
 .drawing .draw-btn{animation:glowPulse .6s ease-in-out infinite}
 
-/* Baemin button */
-.baemin-btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:10px 20px;border-radius:12px;
-  background:#2AC1BC;color:#fff;
-  font-size:13px;font-weight:700;
-  border:none;cursor:pointer;
-  text-decoration:none;transition:all .15s;
-  font-family:inherit;margin-top:8px;
+/* Bounce emoji on result */
+.res-emoji.bounce{animation:emojiBounce .6s ease}
+@keyframes emojiBounce{
+  0%{transform:scale(0.3) rotate(-20deg)}
+  50%{transform:scale(1.3) rotate(10deg)}
+  70%{transform:scale(0.9) rotate(-5deg)}
+  100%{transform:scale(1) rotate(0)}
 }
-.baemin-btn:hover{background:#22ABA6;transform:translateY(-1px)}
+
+/* Sparkle effect */
+.sparkle{
+  position:absolute;pointer-events:none;z-index:3;
+  width:6px;height:6px;border-radius:50%;
+  animation:sparkleAnim .8s ease-out forwards;
+}
+@keyframes sparkleAnim{
+  0%{opacity:1;transform:scale(0) translate(0,0)}
+  50%{opacity:1;transform:scale(1.5)}
+  100%{opacity:0;transform:scale(0) translate(var(--tx),var(--ty))}
+}
+
+/* Shuffle card wobble */
+.shuffling .res-emoji{animation:wobble .15s ease infinite alternate}
+@keyframes wobble{
+  0%{transform:rotate(-8deg) scale(1.05)}
+  100%{transform:rotate(8deg) scale(0.95)}
+}
+
+/* Result name pop */
+.res-name.pop{animation:namePop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes namePop{
+  0%{transform:scale(0);opacity:0}
+  60%{transform:scale(1.15)}
+  100%{transform:scale(1);opacity:1}
+}
+
+/* Draw button bounce */
+.draw-btn:not(:disabled){animation:btnFloat 2s ease-in-out infinite}
+@keyframes btnFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+
+/* Confetti v2 */
+.confetti2{
+  position:fixed;pointer-events:none;z-index:200;
+  font-size:24px;
+  animation:confetti2Fall var(--dur) ease-out forwards;
+}
+@keyframes confetti2Fall{
+  0%{opacity:1;transform:translateY(0) rotate(0) scale(1)}
+  100%{opacity:0;transform:translateY(100vh) rotate(720deg) scale(0.3)}
+}
 
 @media(max-width:380px){
   .app{padding:16px 12px 80px}
@@ -663,13 +705,12 @@ function draw(){
   const interval=70;
   let elapsed=0;
   const card=document.getElementById('resCard');
-  card.classList.add('show');
+  card.classList.add('show','shuffling');
   card.style.animation='none';
 
   const tick=setInterval(()=>{
     elapsed+=interval;
     playTick();
-    const speed=Math.min(interval+elapsed/8,200);
     const ri=Math.floor(Math.random()*filteredItems.length);
     const n=filteredItems[ri];
     document.getElementById('resEmoji').textContent=getEmoji(n);
@@ -678,14 +719,15 @@ function draw(){
     if(elapsed>=shuffleTime){
       clearInterval(tick);
       area.classList.remove('drawing');
+      card.classList.remove('shuffling');
       const fi=Math.floor(Math.random()*filteredItems.length);
       const winner=filteredItems[fi];
-      // shake + flip animation
       card.classList.add('shaking');
       setTimeout(()=>{
         card.classList.remove('shaking');
         playWin();
         showResult(winner);
+        spawnConfetti2();
       },400);
     }
   },interval);
@@ -699,8 +741,12 @@ function showResult(name){
   void card.offsetWidth;
   card.style.animation='cardIn .5s cubic-bezier(.34,1.56,.64,1)';
 
-  document.getElementById('resEmoji').textContent=getEmoji(name);
-  document.getElementById('resName').textContent=name;
+  const emojiEl=document.getElementById('resEmoji');
+  const nameEl=document.getElementById('resName');
+  emojiEl.textContent=getEmoji(name);
+  emojiEl.classList.remove('bounce');void emojiEl.offsetWidth;emojiEl.classList.add('bounce');
+  nameEl.textContent=name;
+  nameEl.classList.remove('pop');void nameEl.offsetWidth;nameEl.classList.add('pop');
   document.getElementById('resCat').textContent=getDesc(name);
 
   // tags + baemin link
@@ -708,8 +754,7 @@ function showResult(name){
   tags.innerHTML='';
   if(tab==='deliv'){
     const q=encodeURIComponent(name);
-    tags.innerHTML=`<span class="res-tag">🛵 배달 주문</span>
-      <button class="baemin-btn" onclick="event.stopPropagation();openBaemin()">🛵 배민 앱 열기</button>`;
+    tags.innerHTML='<span class="res-tag">🛵 배달 주문</span>';
   }else if(tab==='nearby'){
     tags.innerHTML='<span class="res-tag">🏃 도보 3분 이내</span>';
   }else{
@@ -723,6 +768,21 @@ function showResult(name){
   pickHistory.unshift({name,emoji:getEmoji(name),time:new Date().toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'})});
   if(pickHistory.length>5)pickHistory.pop();
   renderHist();
+}
+
+function spawnConfetti2(){
+  const emojis=['🎉','🎊','✨','🌟','💫','🥳','🍕','🍜','🍔','🎶'];
+  for(let i=0;i<15;i++){
+    const s=document.createElement('span');
+    s.className='confetti2';
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left=(Math.random()*100)+'vw';
+    s.style.top=(-10-Math.random()*20)+'px';
+    s.style.setProperty('--dur',(1.5+Math.random()*2)+'s');
+    s.style.animationDelay=(Math.random()*0.8)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),4000);
+  }
 }
 
 function hideResult(){
@@ -888,18 +948,6 @@ function playWin(){
       o.start();o.stop(audioCtx.currentTime+0.3);
     },i*120);
   });
-}
-
-function openBaemin(){
-  const isIOS=/iPhone|iPad/i.test(navigator.userAgent);
-  const timeout=setTimeout(()=>{
-    // 앱이 안 열리면 스토어로
-    location.href=isIOS
-      ?'https://apps.apple.com/kr/app/%EB%B0%B0%EB%8B%AC%EC%9D%98%EB%AF%BC%EC%A1%B1/id378084485'
-      :'https://play.google.com/store/apps/details?id=com.sampleapp';
-  },1500);
-  window.addEventListener('blur',()=>clearTimeout(timeout),{once:true});
-  location.href='baemin://';
 }
 
 function resetData(){
