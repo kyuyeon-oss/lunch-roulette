@@ -343,6 +343,7 @@ button{font-family:inherit;cursor:pointer}
       </div>
       <div class="mlist" id="mlist"></div>
       <button class="share" onclick="shareURL()">🔗 팀원에게 공유하기</button>
+      <button class="share" onclick="resetData()" style="margin-top:6px;color:var(--text3)">🔄 기본값으로 초기화</button>
     </div>
   </div>
 </div>
@@ -700,7 +701,7 @@ function clearHist(){pickHistory=[];renderHist()}
 function toggleManage(){
   document.getElementById('managePanel').classList.toggle('show');
 }
-let editingIdx=null;
+let editingIdx=null,editEmoji=null;
 function renderManage(){
   const el=document.getElementById('mlist');
   el.innerHTML='';
@@ -712,11 +713,17 @@ function renderManage(){
       const catOpts=Object.keys(src).map(c=>`<option value="${c}"${c===curCat?' selected':''}>${c}</option>`).join('');
       const d=mk('div','medit');
       d.style.cssText='display:flex;gap:6px;align-items:center;width:100%;padding:6px 0;flex-wrap:wrap;animation:up .2s ease';
-      d.innerHTML=`<input class="add-in" id="editName" value="${t}" style="flex:2;padding:8px 10px;font-size:13px;min-width:80px">
+      const emojiList=['🍚','🍔','🍣','🍜','🍛','🥗','🍝','🌮','🍲','🥩','🍕','🍗','🌶️','🐟','🍱','🥚','🍳','🥙','🍢','🐷','🫕','🥞','🐚','🍽','🍙','🥣','🐔','🦑','🥐'];
+      const emojiPicks=emojiList.map(e=>`<span onclick="editEmoji='${e}';document.getElementById('editEmojiPreview').textContent='${e}'" style="cursor:pointer;padding:1px 3px;font-size:16px;border-radius:4px;transition:all .1s"${e===info.e?' class="sel"':''}>${e}</span>`).join('');
+      d.innerHTML=`<div style="display:flex;gap:6px;align-items:center;width:100%">
+        <span id="editEmojiPreview" style="font-size:22px;cursor:pointer">${info.e}</span>
+        <input class="add-in" id="editName" value="${t}" style="flex:2;padding:8px 10px;font-size:13px;min-width:80px">
         <input class="add-in" id="editDesc" value="${info.d}" placeholder="메뉴" style="flex:2;padding:8px 10px;font-size:13px;min-width:80px">
         <select id="editCat" class="add-in" style="flex:1;padding:8px 6px;font-size:12px;min-width:70px">${catOpts}</select>
         <button class="add-bt" onclick="saveEdit(${i})" style="padding:8px 12px;font-size:12px">저장</button>
-        <button class="add-bt" onclick="cancelEdit()" style="padding:8px 10px;font-size:12px;background:var(--text3)">취소</button>`;
+        <button class="add-bt" onclick="cancelEdit()" style="padding:8px 10px;font-size:12px;background:var(--text3)">취소</button>
+      </div>
+      <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:4px">${emojiPicks}</div>`;
       el.appendChild(d);
     }else{
       const info=INFO[t]||{e:'🍽',d:''};
@@ -749,7 +756,8 @@ function saveEdit(i){
   // update INFO
   const oldInfo=INFO[oldName]||{e:'🍽',d:''};
   if(oldName!==newName)delete INFO[oldName];
-  INFO[newName]={e:oldInfo.e,d:newDesc||oldInfo.d};
+  INFO[newName]={e:editEmoji||oldInfo.e,d:newDesc||oldInfo.d};
+  editEmoji=null;
   editingIdx=null;
   buildPills();
   toast('✏️ 수정되었어요!');
@@ -799,7 +807,37 @@ function toast(m){
   setTimeout(()=>t.classList.remove('show'),2200);
 }
 
+function resetData(){
+  if(!confirm('모든 수정사항이 초기화됩니다. 계속할까요?'))return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+// === localStorage persistence ===
+const STORAGE_KEY='lunch-roulette-data';
+function saveData(){
+  const data={CATS,OUT_NEARBY,OUT_MATJIP,INFO};
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+}
+function loadData(){
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw)return;
+  try{
+    const data=JSON.parse(raw);
+    if(data.CATS)Object.keys(data.CATS).forEach(k=>CATS[k]=data.CATS[k]);
+    // remove keys not in saved data
+    Object.keys(CATS).forEach(k=>{if(!data.CATS[k])delete CATS[k]});
+    if(data.OUT_NEARBY){Object.keys(OUT_NEARBY).forEach(k=>delete OUT_NEARBY[k]);Object.assign(OUT_NEARBY,data.OUT_NEARBY)}
+    if(data.OUT_MATJIP){Object.keys(OUT_MATJIP).forEach(k=>delete OUT_MATJIP[k]);Object.assign(OUT_MATJIP,data.OUT_MATJIP)}
+    if(data.INFO)Object.assign(INFO,data.INFO);
+  }catch(e){}
+}
+// hook save into every mutation
+const _origBuildPills=buildPills;
+buildPills=function(){_origBuildPills();saveData()};
+
 // init
+loadData();
 switchTab('nearby');
 </script>
 </body>
