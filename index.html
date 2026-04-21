@@ -293,57 +293,6 @@ button{font-family:inherit;cursor:pointer}
 }
 .drawing .draw-btn{animation:glowPulse .6s ease-in-out infinite}
 
-/* Vote mode */
-.vote-bar{
-  display:flex;gap:8px;margin-bottom:16px;
-}
-.vote-btn{
-  flex:1;padding:10px;border-radius:12px;
-  border:1.5px solid var(--border2);background:var(--card);
-  font-size:13px;font-weight:600;color:var(--text2);
-  cursor:pointer;transition:all .2s;font-family:inherit;
-}
-.vote-btn.on{border-color:var(--mint);color:var(--mint);background:var(--mint-light)}
-.vote-btn:hover{border-color:var(--mint)}
-.vote-input{
-  display:none;align-items:center;gap:8px;
-  margin-bottom:12px;justify-content:center;
-}
-.vote-input.show{display:flex}
-.vote-input label{font-size:13px;color:var(--text2);font-weight:600}
-.vote-input input{
-  width:50px;padding:8px;text-align:center;
-  border:1.5px solid var(--border2);border-radius:10px;
-  font-size:15px;font-weight:700;font-family:inherit;
-  color:var(--text);outline:none;
-}
-.vote-input input:focus{border-color:var(--mint)}
-.vote-result{
-  display:none;margin-top:16px;
-  background:var(--card);border-radius:var(--r);
-  border:1.5px solid var(--border);padding:16px;
-  animation:cardIn .4s ease;
-}
-.vote-result.show{display:block}
-.vote-result h3{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text)}
-.vote-bar-item{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:6px;font-size:13px;font-weight:500;
-}
-.vote-bar-fill{
-  height:24px;border-radius:8px;
-  background:linear-gradient(90deg,var(--mint),var(--mint-dark));
-  display:flex;align-items:center;
-  padding:0 8px;color:#fff;font-size:11px;font-weight:700;
-  min-width:30px;transition:width .6s ease;
-}
-.vote-winner{
-  text-align:center;padding:12px;margin-top:8px;
-  background:linear-gradient(135deg,#FFF3E8,#FFE8F0);
-  border-radius:12px;font-size:15px;font-weight:700;
-  color:var(--coral);
-}
-
 /* Baemin button */
 .baemin-btn{
   display:inline-flex;align-items:center;gap:6px;
@@ -383,16 +332,6 @@ button{font-family:inherit;cursor:pointer}
   </div>
   <div class="pills" id="pills"></div>
 
-  <div class="vote-bar">
-    <button class="vote-btn on" id="vbSolo" onclick="setMode('solo')">🎰 혼자 뽑기</button>
-    <button class="vote-btn" id="vbVote" onclick="setMode('vote')">🗳 다같이 뽑기</button>
-  </div>
-  <div class="vote-input" id="voteInput">
-    <label>참여 인원</label>
-    <input type="number" id="voteCnt" value="4" min="2" max="20">
-    <label>명</label>
-  </div>
-
   <div class="draw-area" id="drawArea">
     <button class="draw-btn" id="drawBtn" onclick="draw()">🎰 돌려돌려~</button>
   </div>
@@ -407,11 +346,6 @@ button{font-family:inherit;cursor:pointer}
   </div>
 
   <button class="retry-btn" id="retryBtn" style="display:none" onclick="draw()">↻ 다시 돌리기</button>
-  <div class="vote-result" id="voteResult">
-    <h3>🗳 투표 결과</h3>
-    <div id="voteChart"></div>
-    <div class="vote-winner" id="voteWinner"></div>
-  </div>
 
   <div class="hist" id="histSec" style="display:none">
     <div class="hist-head">
@@ -721,12 +655,9 @@ function draw(){
   if(!filteredItems.length){toast('선택된 메뉴가 없어요!');return}
   if(audioCtx.state==='suspended')audioCtx.resume();
 
-  if(drawMode==='vote')return drawVote();
-
   const area=document.getElementById('drawArea');
   area.classList.add('drawing');
   hideResult();
-  document.getElementById('voteResult').classList.remove('show');
 
   const shuffleTime=1500;
   const interval=70;
@@ -760,79 +691,6 @@ function draw(){
   },interval);
 }
 
-function drawVote(){
-  const cnt=parseInt(document.getElementById('voteCnt').value)||4;
-  if(cnt<2){toast('2명 이상이어야 해요!');return}
-  if(!filteredItems.length){toast('선택된 메뉴가 없어요!');return}
-
-  const area=document.getElementById('drawArea');
-  area.classList.add('drawing');
-  hideResult();
-
-  const card=document.getElementById('resCard');
-  card.classList.add('show');
-  card.style.animation='none';
-
-  let round=0;
-  const results=[];
-  const totalTime=cnt*400;
-
-  const doRound=()=>{
-    if(round>=cnt){
-      area.classList.remove('drawing');
-      card.classList.remove('show');
-      // tally
-      const tally={};
-      results.forEach(r=>{tally[r]=(tally[r]||0)+1});
-      const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-      const maxVote=sorted[0][1];
-      // show chart
-      const chart=document.getElementById('voteChart');
-      chart.innerHTML='';
-      sorted.forEach(([name,votes])=>{
-        const pct=Math.round(votes/cnt*100);
-        const d=mk('div','vote-bar-item');
-        d.innerHTML=`<span style="width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${getEmoji(name)} ${name}</span>
-          <div class="vote-bar-fill" style="width:${pct}%">${votes}표</div>`;
-        chart.appendChild(d);
-      });
-      const winner=sorted[0][0];
-      document.getElementById('voteWinner').textContent=`🏆 오늘의 점심은 ${getEmoji(winner)} ${winner}!`;
-      document.getElementById('voteResult').classList.add('show');
-      document.getElementById('retryBtn').style.display='block';
-      document.getElementById('drawBtn').style.display='none';
-      playWin();
-
-      // add to history
-      pickHistory.unshift({name:winner,emoji:getEmoji(winner),time:new Date().toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'})});
-      if(pickHistory.length>5)pickHistory.pop();
-      renderHist();
-      return;
-    }
-    // shuffle for this round
-    let t=0;
-    const iv=setInterval(()=>{
-      t+=60;
-      playTick();
-      const ri=Math.floor(Math.random()*filteredItems.length);
-      const n=filteredItems[ri];
-      document.getElementById('resEmoji').textContent=getEmoji(n);
-      document.getElementById('resName').textContent=`${round+1}번째 뽑기...`;
-      document.getElementById('resCat').textContent=n;
-      if(t>=300){
-        clearInterval(iv);
-        const pick=filteredItems[Math.floor(Math.random()*filteredItems.length)];
-        results.push(pick);
-        document.getElementById('resName').textContent=`${round+1}/${cnt} 🎯 ${pick}`;
-        document.getElementById('resEmoji').textContent=getEmoji(pick);
-        document.getElementById('resCat').textContent=getDesc(pick);
-        round++;
-        setTimeout(doRound,300);
-      }
-    },60);
-  };
-  doRound();
-}
 
 function showResult(name){
   const card=document.getElementById('resCard');
@@ -851,7 +709,7 @@ function showResult(name){
   if(tab==='deliv'){
     const q=encodeURIComponent(name);
     tags.innerHTML=`<span class="res-tag">🛵 배달 주문</span>
-      <a class="baemin-btn" href="https://www.baemin.com/search?keyword=${q}" target="_blank" onclick="event.stopPropagation()">🛵 배민에서 주문하기</a>`;
+      <a class="baemin-btn" href="https://m.search.naver.com/search.naver?query=${q}+배달의민족" target="_blank" onclick="event.stopPropagation()">🛵 배민에서 찾기</a>`;
   }else if(tab==='nearby'){
     tags.innerHTML='<span class="res-tag">🏃 도보 3분 이내</span>';
   }else{
@@ -1030,23 +888,6 @@ function playWin(){
       o.start();o.stop(audioCtx.currentTime+0.3);
     },i*120);
   });
-}
-
-// === Vote mode ===
-let drawMode='solo';
-function setMode(m){
-  drawMode=m;
-  document.getElementById('vbSolo').classList.toggle('on',m==='solo');
-  document.getElementById('vbVote').classList.toggle('on',m==='vote');
-  document.getElementById('voteInput').classList.toggle('show',m==='vote');
-  document.getElementById('voteResult').classList.remove('show');
-  document.getElementById('drawBtn').textContent=m==='solo'?'🎰 돌려돌려~':'🗳 다같이 뽑기!';
-}
-
-// === Baemin deep link ===
-function openBaemin(name){
-  const q=encodeURIComponent(name);
-  window.open('https://baemin.me/'+q,'_blank')||window.open('https://www.baemin.com/search?keyword='+q,'_blank');
 }
 
 function resetData(){
