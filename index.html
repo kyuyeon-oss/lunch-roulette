@@ -266,89 +266,29 @@ button{font-family:inherit;cursor:pointer}
 }
 @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
 
-/* Card flip */
-.res-card{perspective:800px}
-.res-card .flipper{
-  transition:transform .6s cubic-bezier(.34,1.56,.64,1);
-  transform-style:preserve-3d;
-}
-.res-card.flipping .flipper{transform:rotateY(180deg)}
-.res-card .flip-front,.res-card .flip-back{backface-visibility:hidden}
-.res-card .flip-back{transform:rotateY(180deg)}
-
-/* Shake */
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-6px) rotate(-1deg)}
-  40%{transform:translateX(6px) rotate(1deg)}
-  60%{transform:translateX(-4px)}
-  80%{transform:translateX(4px)}
-}
-.shaking .res-emoji{animation:shake .4s ease}
-
-/* Glow pulse on draw */
-@keyframes glowPulse{
-  0%,100%{box-shadow:0 0 8px rgba(255,126,95,.2)}
-  50%{box-shadow:0 0 24px rgba(255,94,138,.5)}
-}
-.drawing .draw-btn{animation:glowPulse .6s ease-in-out infinite}
-
-/* Bounce emoji on result */
-.res-emoji.bounce{animation:emojiBounce .6s ease}
+/* Result emoji bounce */
+.res-emoji.bounce{animation:emojiBounce .5s cubic-bezier(.34,1.56,.64,1)}
 @keyframes emojiBounce{
-  0%{transform:scale(0.3) rotate(-20deg)}
-  50%{transform:scale(1.3) rotate(10deg)}
-  70%{transform:scale(0.9) rotate(-5deg)}
-  100%{transform:scale(1) rotate(0)}
-}
-
-/* Sparkle effect */
-.sparkle{
-  position:absolute;pointer-events:none;z-index:3;
-  width:6px;height:6px;border-radius:50%;
-  animation:sparkleAnim .8s ease-out forwards;
-}
-@keyframes sparkleAnim{
-  0%{opacity:1;transform:scale(0) translate(0,0)}
-  50%{opacity:1;transform:scale(1.5)}
-  100%{opacity:0;transform:scale(0) translate(var(--tx),var(--ty))}
-}
-
-/* Shuffle emoji-only wobble */
-.shuffling .res-emoji>span,.shuffling .res-emoji{
-  display:inline-block;
-  animation:wobble .15s ease infinite alternate;
-}
-@keyframes wobble{
-  0%{transform:rotate(-12deg) scale(1.1)}
-  100%{transform:rotate(12deg) scale(0.9)}
-}
-.shuffling .res-body,.shuffling .res-card{animation:none!important}
-
-/* Result name pop */
-.res-name.pop{animation:namePop .5s cubic-bezier(.34,1.56,.64,1)}
-@keyframes namePop{
-  0%{transform:scale(0);opacity:0}
-  60%{transform:scale(1.15)}
+  0%{transform:scale(0.5);opacity:0}
   100%{transform:scale(1);opacity:1}
 }
 
-/* Draw button bounce */
-.draw-btn:not(:disabled){animation:btnFloat 2s ease-in-out infinite}
-@keyframes btnFloat{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-4px)}
+/* Result name fade up */
+.res-name.pop{animation:nameUp .4s ease}
+@keyframes nameUp{
+  0%{transform:translateY(10px);opacity:0}
+  100%{transform:translateY(0);opacity:1}
 }
 
-/* Confetti v2 */
+/* Confetti */
 .confetti2{
   position:fixed;pointer-events:none;z-index:200;
-  font-size:24px;
-  animation:confetti2Fall var(--dur) ease-out forwards;
+  font-size:20px;opacity:0;
+  animation:confettiFall var(--dur) ease-out forwards;
 }
-@keyframes confetti2Fall{
-  0%{opacity:1;transform:translateY(0) rotate(0) scale(1)}
-  100%{opacity:0;transform:translateY(100vh) rotate(720deg) scale(0.3)}
+@keyframes confettiFall{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(80vh) scale(0.5)}
 }
 
 @media(max-width:380px){
@@ -709,7 +649,7 @@ function draw(){
   const interval=70;
   let elapsed=0;
   const card=document.getElementById('resCard');
-  card.classList.add('show','shuffling');
+  card.classList.add('show');
   card.style.animation='none';
 
   const tick=setInterval(()=>{
@@ -719,20 +659,15 @@ function draw(){
     const n=filteredItems[ri];
     document.getElementById('resEmoji').textContent=getEmoji(n);
     document.getElementById('resName').textContent=n;
-    document.getElementById('resCat').textContent=getDesc(n);
+    document.getElementById('resCat').textContent='';
     if(elapsed>=shuffleTime){
       clearInterval(tick);
       area.classList.remove('drawing');
-      card.classList.remove('shuffling');
       const fi=Math.floor(Math.random()*filteredItems.length);
       const winner=filteredItems[fi];
-      card.classList.add('shaking');
-      setTimeout(()=>{
-        card.classList.remove('shaking');
-        playWin();
-        showResult(winner);
-        spawnConfetti2();
-      },400);
+      playWin();
+      showResult(winner);
+      spawnConfetti2();
     }
   },interval);
 }
@@ -775,15 +710,15 @@ function showResult(name){
 }
 
 function spawnConfetti2(){
-  const emojis=['🎉','🎊','✨','🌟','💫','🥳','🍕','🍜','🍔','🎶'];
-  for(let i=0;i<15;i++){
+  const emojis=['🎉','✨','🌟','💫'];
+  for(let i=0;i<8;i++){
     const s=document.createElement('span');
     s.className='confetti2';
-    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-    s.style.left=(Math.random()*100)+'vw';
-    s.style.top=(-10-Math.random()*20)+'px';
-    s.style.setProperty('--dur',(1.5+Math.random()*2)+'s');
-    s.style.animationDelay=(Math.random()*0.8)+'s';
+    s.textContent=emojis[i%emojis.length];
+    s.style.left=(10+Math.random()*80)+'vw';
+    s.style.top='-20px';
+    s.style.setProperty('--dur',(2+Math.random()*1.5)+'s');
+    s.style.animationDelay=(Math.random()*0.5)+'s';
     document.body.appendChild(s);
     setTimeout(()=>s.remove(),4000);
   }
