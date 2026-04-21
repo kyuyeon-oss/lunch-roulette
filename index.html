@@ -792,12 +792,16 @@ function rmItem(i){
 }
 
 function shareURL(){
-  const data={tab,items:filteredItems};
-  const enc=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-  window.history.replaceState(null,'','#'+enc);
-  navigator.clipboard.writeText(location.href)
-    .then(()=>toast('📋 URL 복사 완료!'))
-    .catch(()=>toast('복사 실패 😢'));
+  const data={v:2,CATS,OUT_NEARBY,OUT_MATJIP,INFO};
+  const json=JSON.stringify(data);
+  const enc=btoa(unescape(encodeURIComponent(json)));
+  const url=location.origin+location.pathname+'#'+enc;
+  navigator.clipboard.writeText(url)
+    .then(()=>toast('📋 URL 복사 완료! 이 링크를 팀원에게 공유하세요~'))
+    .catch(()=>{
+      // fallback: prompt
+      prompt('아래 URL을 복사하세요:',url);
+    });
 }
 
 function mk(tag,cls){const e=document.createElement(tag);e.className=cls;return e}
@@ -819,18 +823,32 @@ function saveData(){
   const data={CATS,OUT_NEARBY,OUT_MATJIP,INFO};
   localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
 }
+function applyData(data){
+  if(data.CATS){Object.keys(CATS).forEach(k=>delete CATS[k]);Object.assign(CATS,data.CATS)}
+  if(data.OUT_NEARBY){Object.keys(OUT_NEARBY).forEach(k=>delete OUT_NEARBY[k]);Object.assign(OUT_NEARBY,data.OUT_NEARBY)}
+  if(data.OUT_MATJIP){Object.keys(OUT_MATJIP).forEach(k=>delete OUT_MATJIP[k]);Object.assign(OUT_MATJIP,data.OUT_MATJIP)}
+  if(data.INFO)Object.assign(INFO,data.INFO);
+}
 function loadData(){
+  // 1. URL 해시가 있으면 우선 적용 (공유 링크)
+  const hash=location.hash.slice(1);
+  if(hash){
+    try{
+      const json=decodeURIComponent(escape(atob(hash)));
+      const data=JSON.parse(json);
+      if(data.v===2){
+        applyData(data);
+        saveData(); // URL 데이터를 localStorage에도 저장
+        window.history.replaceState(null,'',location.pathname); // 해시 제거
+        toast('📥 공유된 식당 목록을 불러왔어요!');
+        return;
+      }
+    }catch(e){}
+  }
+  // 2. localStorage에서 로드
   const raw=localStorage.getItem(STORAGE_KEY);
   if(!raw)return;
-  try{
-    const data=JSON.parse(raw);
-    if(data.CATS)Object.keys(data.CATS).forEach(k=>CATS[k]=data.CATS[k]);
-    // remove keys not in saved data
-    Object.keys(CATS).forEach(k=>{if(!data.CATS[k])delete CATS[k]});
-    if(data.OUT_NEARBY){Object.keys(OUT_NEARBY).forEach(k=>delete OUT_NEARBY[k]);Object.assign(OUT_NEARBY,data.OUT_NEARBY)}
-    if(data.OUT_MATJIP){Object.keys(OUT_MATJIP).forEach(k=>delete OUT_MATJIP[k]);Object.assign(OUT_MATJIP,data.OUT_MATJIP)}
-    if(data.INFO)Object.assign(INFO,data.INFO);
-  }catch(e){}
+  try{applyData(JSON.parse(raw))}catch(e){}
 }
 // hook save into every mutation
 const _origBuildPills=buildPills;
