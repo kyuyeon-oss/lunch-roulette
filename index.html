@@ -700,14 +700,59 @@ function clearHist(){pickHistory=[];renderHist()}
 function toggleManage(){
   document.getElementById('managePanel').classList.toggle('show');
 }
+let editingIdx=null;
 function renderManage(){
   const el=document.getElementById('mlist');
   el.innerHTML='';
   filteredItems.forEach((t,i)=>{
-    const d=mk('span','mitem');
-    d.innerHTML=`${t}<button class="mx" onclick="rmItem(${i})">✕</button>`;
-    el.appendChild(d);
+    if(editingIdx===i){
+      const info=INFO[t]||{e:'🍽',d:''};
+      const src=catSource();
+      const curCat=Object.entries(src).find(([c,l])=>l.includes(t))?.[0]||'기타';
+      const catOpts=Object.keys(src).map(c=>`<option value="${c}"${c===curCat?' selected':''}>${c}</option>`).join('');
+      const d=mk('div','medit');
+      d.style.cssText='display:flex;gap:6px;align-items:center;width:100%;padding:6px 0;flex-wrap:wrap;animation:up .2s ease';
+      d.innerHTML=`<input class="add-in" id="editName" value="${t}" style="flex:2;padding:8px 10px;font-size:13px;min-width:80px">
+        <input class="add-in" id="editDesc" value="${info.d}" placeholder="메뉴" style="flex:2;padding:8px 10px;font-size:13px;min-width:80px">
+        <select id="editCat" class="add-in" style="flex:1;padding:8px 6px;font-size:12px;min-width:70px">${catOpts}</select>
+        <button class="add-bt" onclick="saveEdit(${i})" style="padding:8px 12px;font-size:12px">저장</button>
+        <button class="add-bt" onclick="cancelEdit()" style="padding:8px 10px;font-size:12px;background:var(--text3)">취소</button>`;
+      el.appendChild(d);
+    }else{
+      const info=INFO[t]||{e:'🍽',d:''};
+      const d=mk('span','mitem');
+      d.style.cursor='pointer';
+      d.innerHTML=`<span style="font-size:14px">${info.e}</span> ${t} <span style="color:var(--text3);font-size:11px;margin-left:2px">${info.d}</span><button class="mx" onclick="event.stopPropagation();rmItem(${i})">✕</button>`;
+      d.onclick=()=>startEdit(i);
+      el.appendChild(d);
+    }
   });
+}
+function startEdit(i){editingIdx=i;renderManage()}
+function cancelEdit(){editingIdx=null;renderManage()}
+function saveEdit(i){
+  const oldName=filteredItems[i];
+  const newName=document.getElementById('editName').value.trim();
+  const newDesc=document.getElementById('editDesc').value.trim();
+  const newCat=document.getElementById('editCat').value;
+  if(!newName){toast('식당 이름을 입력해주세요!');return}
+  const src=catSource();
+  // remove from old category
+  for(const list of Object.values(src)){
+    const idx=list.indexOf(oldName);
+    if(idx>-1){list.splice(idx,1);break}
+  }
+  // add to new category
+  if(!src[newCat])src[newCat]=[];
+  src[newCat].push(newName);
+  selCats.add(newCat);
+  // update INFO
+  const oldInfo=INFO[oldName]||{e:'🍽',d:''};
+  if(oldName!==newName)delete INFO[oldName];
+  INFO[newName]={e:oldInfo.e,d:newDesc||oldInfo.d};
+  editingIdx=null;
+  buildPills();
+  toast('✏️ 수정되었어요!');
 }
 function addItem(){
   const inp=document.getElementById('inp');
